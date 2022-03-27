@@ -8,7 +8,7 @@ static void errorReport(const char* str, void* errorOutputObject)
 void initHavok()
 {
     hkMemoryRouter* memoryRouter = hkMemoryInitUtil::initDefault(
-        hkMallocAllocator::m_defaultMallocAllocator, hkMemorySystem::FrameInfo(2 << 20));
+        hkMallocAllocator::m_defaultMallocAllocator, hkMemorySystem::FrameInfo(1 << 20));
     hkBaseSystem::init(memoryRouter, errorReport);
 }
 

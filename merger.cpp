@@ -7,7 +7,7 @@
 
 const float fps         = 30.0f;
 const float frame_delta = 1.0f / fps;
-const bool  enable_test = false;
+const bool  enable_test = true;
 
 void process(int argc, char* argv[])
 {
@@ -42,8 +42,8 @@ void process(int argc, char* argv[])
     if (!(data_a && data_v))
         return;
 
-    auto anim_a = static_cast<hkaSplineCompressedAnimation*>(reinterpret_cast<hkaAnimationContainer*>(data_a->getContents<hkRootLevelContainer>()->findObjectByType(hkaAnimationContainerClass.getName()))->m_animations[0].val());
-    auto anim_v = static_cast<hkaSplineCompressedAnimation*>(reinterpret_cast<hkaAnimationContainer*>(data_v->getContents<hkRootLevelContainer>()->findObjectByType(hkaAnimationContainerClass.getName()))->m_animations[0].val());
+    auto anim_a = static_cast<hkaInterleavedUncompressedAnimation*>(reinterpret_cast<hkaAnimationContainer*>(data_a->getContents<hkRootLevelContainer>()->findObjectByType(hkaAnimationContainerClass.getName()))->m_animations[0].val());
+    auto anim_v = static_cast<hkaInterleavedUncompressedAnimation*>(reinterpret_cast<hkaAnimationContainer*>(data_v->getContents<hkRootLevelContainer>()->findObjectByType(hkaAnimationContainerClass.getName()))->m_animations[0].val());
     if (!checkSame(anim_a, anim_v))
     {
         LOG("Two animations duration not matched!");
@@ -101,20 +101,35 @@ void process(int argc, char* argv[])
         // Paired root
         idx++;
 
+        // // Victim anim
+        // idx++;
+        // memcpy(transforms.begin() + idx, anim_v_tracks.data(frame * anim_v->m_numberOfTransformTracks), sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
+        // _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+        // std::vector<hkQsTransform> anim_v_tracks(anim_v->m_numberOfTransformTracks);
+        // anim_v->sampleTracks(curr_time, anim_v_tracks.data(), nullptr); // Causes access violation for some reason
+        // memcpy(transforms.begin() + idx, anim_v_tracks.data(), sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
+        // idx += anim_v->m_numberOfTransformTracks;
+
+        // // Attacker anim
+        // idx++;
+        // _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+        // std::vector<hkQsTransform> anim_a_tracks(anim_a->m_numberOfTransformTracks);
+        // anim_a->sampleTracks(curr_time, anim_a_tracks.data(), nullptr);
+        // memcpy(transforms.begin() + idx, anim_a_tracks.data(), sizeof(hkQsTransform) * anim_a->m_numberOfTransformTracks);
+        // idx += anim_a->m_numberOfTransformTracks;
+
         // Victim anim
         idx++;
-        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-        std::vector<hkQsTransform> anim_v_tracks(anim_v->m_numberOfTransformTracks);
-        anim_v->sampleTracks(curr_time, anim_v_tracks.data(), nullptr); // Causes access violation for some reason
-        memcpy(transforms.begin() + idx, anim_v_tracks.data(), sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
+        memcpy(transforms.begin() + idx,
+               anim_v->m_transforms.begin() + (frame * anim_v->m_numberOfTransformTracks),
+               sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
         idx += anim_v->m_numberOfTransformTracks;
 
         // Attacker anim
         idx++;
-        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-        std::vector<hkQsTransform> anim_a_tracks(anim_a->m_numberOfTransformTracks);
-        anim_a->sampleTracks(curr_time, anim_a_tracks.data(), nullptr);
-        memcpy(transforms.begin() + idx, anim_a_tracks.data(), sizeof(hkQsTransform) * anim_a->m_numberOfTransformTracks);
+        memcpy(transforms.begin() + idx,
+               anim_a->m_transforms.begin() + (frame * anim_a->m_numberOfTransformTracks),
+               sizeof(hkQsTransform) * anim_a->m_numberOfTransformTracks);
         idx += anim_a->m_numberOfTransformTracks;
     }
     hkaSkeletonUtils::normalizeRotations(transforms.begin(), transforms.getSize());
