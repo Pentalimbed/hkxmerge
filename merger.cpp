@@ -7,7 +7,7 @@
 
 const float fps         = 30.0f;
 const float frame_delta = 1.0f / fps;
-const bool  enable_test = true;
+const bool  enable_test = false;
 
 void process(int argc, char* argv[])
 {
@@ -101,37 +101,47 @@ void process(int argc, char* argv[])
         // Paired root
         idx++;
 
-        // // Victim anim
-        // idx++;
-        // memcpy(transforms.begin() + idx, anim_v_tracks.data(frame * anim_v->m_numberOfTransformTracks), sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
-        // _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-        // std::vector<hkQsTransform> anim_v_tracks(anim_v->m_numberOfTransformTracks);
-        // anim_v->sampleTracks(curr_time, anim_v_tracks.data(), nullptr); // Causes access violation for some reason
-        // memcpy(transforms.begin() + idx, anim_v_tracks.data(), sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
-        // idx += anim_v->m_numberOfTransformTracks;
-
-        // // Attacker anim
-        // idx++;
-        // _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-        // std::vector<hkQsTransform> anim_a_tracks(anim_a->m_numberOfTransformTracks);
-        // anim_a->sampleTracks(curr_time, anim_a_tracks.data(), nullptr);
-        // memcpy(transforms.begin() + idx, anim_a_tracks.data(), sizeof(hkQsTransform) * anim_a->m_numberOfTransformTracks);
-        // idx += anim_a->m_numberOfTransformTracks;
-
+#ifdef NDEBUG
+        // UNCOMPRESSED
         // Victim anim
         idx++;
         memcpy(transforms.begin() + idx,
                anim_v->m_transforms.begin() + (frame * anim_v->m_numberOfTransformTracks),
-               sizeof(hkQsTransform) * anim_v->m_numberOfTransformTracks);
+               sizeof(hkQsTransform) * (anim_v->m_numberOfTransformTracks));
         idx += anim_v->m_numberOfTransformTracks;
 
         // Attacker anim
         idx++;
         memcpy(transforms.begin() + idx,
                anim_a->m_transforms.begin() + (frame * anim_a->m_numberOfTransformTracks),
-               sizeof(hkQsTransform) * anim_a->m_numberOfTransformTracks);
+               sizeof(hkQsTransform) * (anim_a->m_numberOfTransformTracks));
         idx += anim_a->m_numberOfTransformTracks;
+#else
+        // COMPRESSED
+        // Victim anim
+        idx++;
+        anim_v->sampleTracks(curr_time, transforms.begin() + idx, nullptr); // Causes access violation for some reason
+        idx += anim_v->m_numberOfTransformTracks;
+
+        // Attacker anim
+        idx++;
+        anim_a->sampleTracks(curr_time, transforms.begin() + idx, nullptr);
+        idx += anim_a->m_numberOfTransformTracks;
+#endif
     }
+
+    // swap
+    for (int frame = 0; frame < nframes; frame++)
+    {
+        auto frame_begin = transforms.begin() + frame * ntracks;
+        std::swap(*(frame_begin + 1), *(frame_begin + 2));
+        std::swap(*(frame_begin + anim_v->m_numberOfTransformTracks + 2),
+                  *(frame_begin + anim_v->m_numberOfTransformTracks + 3));
+        // revert rotation?
+        // (frame_begin + 2)->m_rotation.setInverse((frame_begin + 1)->m_rotation);
+        // (frame_begin + anim_v->m_numberOfTransformTracks + 3)->m_rotation.setInverse((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation);
+    }
+
     hkaSkeletonUtils::normalizeRotations(transforms.begin(), transforms.getSize());
 
     // Shit compressor
