@@ -3,8 +3,8 @@ set(CXX_STANDARD 11)
 
 project(hkxmerge VERSION 1.0.0)
 
-set(HavokPath "E:/dev/libs/cpp/hk2014_1_0_r1")
-set(HavokLibPath "${HavokPath}/Lib/win32_vs2012_win7/release")
+set(HavokPath "E:/dev/libs/cpp/hk2010_2_0_r1")
+set(HavokLibPath "${HavokPath}/Lib/win32_net_9-0/release_multithreaded")
 set(HavokInclPath "${HavokPath}/Source")
 
 add_executable(${PROJECT_NAME} impl.cpp main.cpp merger.cpp)

@@ -1,5 +1,7 @@
 #include "merger.h"
 
+#define COMPRESSED
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -101,7 +103,7 @@ void process(int argc, char* argv[])
         // Paired root
         idx++;
 
-#ifdef NDEBUG
+#ifndef COMPRESSED
         // UNCOMPRESSED
         // Victim anim
         idx++;
@@ -120,12 +122,12 @@ void process(int argc, char* argv[])
         // COMPRESSED
         // Victim anim
         idx++;
-        anim_v->sampleTracks(curr_time, transforms.begin() + idx, nullptr); // Causes access violation for some reason
+        anim_v->sampleTracks(curr_time, transforms.begin() + idx, nullptr, nullptr); // Causes access violation for some reason
         idx += anim_v->m_numberOfTransformTracks;
 
         // Attacker anim
         idx++;
-        anim_a->sampleTracks(curr_time, transforms.begin() + idx, nullptr);
+        anim_a->sampleTracks(curr_time, transforms.begin() + idx, nullptr, nullptr);
         idx += anim_a->m_numberOfTransformTracks;
 #endif
     }

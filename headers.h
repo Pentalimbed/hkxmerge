@@ -20,7 +20,6 @@
 #include <Common/Base/System/hkBaseSystem.h>
 #include <Common/Base/Container/String/hkStringBuf.h>
 #include <Common/Base/Ext/hkBaseExt.h>
-#include <Common/Base/Math/Header/hkMathHeaderConstantDefinitions.h>
 
 #include <Common/Base/Memory/System/Util/hkMemoryInitUtil.h>
 #include <Common/Base/Memory/Allocator/Malloc/hkMallocAllocator.h>
