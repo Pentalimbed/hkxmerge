@@ -70,6 +70,8 @@ void process(int argc, char* argv[])
     // Annotations
     LOG("Merging annotations!");
     hkArray<hkaAnnotationTrack>& anno_tracks = temp_anim->m_annotationTracks;
+    int                          com_npc     = -1;
+    int                          com_2       = -1;
 
     anno_tracks[0].m_trackName = "PairedRoot";
     anno_tracks[1].m_trackName = "2_";
@@ -83,12 +85,19 @@ void process(int argc, char* argv[])
             temp_str += anim_v->m_annotationTracks[i].m_trackName.cString();
         }
         anno_tracks[idx].m_trackName = temp_str.c_str();
+
+        if (temp_str.find("NPC COM") != temp_str.npos)
+            com_2 = idx;
     }
     anno_tracks[anim_a->m_numberOfTransformTracks + 2].m_trackName = "NPC";
     for (auto i = 0; i < anim_a->m_numberOfTransformTracks; i++)
     {
         auto idx         = i + anim_v->m_numberOfTransformTracks + 3;
         anno_tracks[idx] = anim_a->m_annotationTracks[i];
+
+        std::string name = anim_a->m_annotationTracks[i].m_trackName;
+        if (name.find("NPC COM") != name.npos)
+            com_npc = idx;
     }
 
     // Fill in transform
@@ -139,9 +148,12 @@ void process(int argc, char* argv[])
         std::swap(*(frame_begin + 1), *(frame_begin + 2));
         std::swap(*(frame_begin + anim_v->m_numberOfTransformTracks + 2),
                   *(frame_begin + anim_v->m_numberOfTransformTracks + 3));
-        // revert rotation?
-        // (frame_begin + 2)->m_rotation.setInverse((frame_begin + 1)->m_rotation);
-        // (frame_begin + anim_v->m_numberOfTransformTracks + 3)->m_rotation.setInverse((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation);
+        // inverse rotation?
+        if ((com_2 != -1) && (com_npc != -1))
+            (frame_begin + 2)->m_rotation.setInverse((frame_begin + 1)->m_rotation);
+        (frame_begin + com_2)->m_rotation.setMul((frame_begin + 1)->m_rotation, (frame_begin + com_2)->m_rotation);
+        (frame_begin + anim_v->m_numberOfTransformTracks + 3)->m_rotation.setInverse((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation);
+        (frame_begin + com_npc)->m_rotation.setMul((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation, (frame_begin + com_npc)->m_rotation);
     }
 
     hkaSkeletonUtils::normalizeRotations(transforms.begin(), transforms.getSize());
