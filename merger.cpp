@@ -100,6 +100,9 @@ void process(int argc, char* argv[])
             com_npc = idx;
     }
 
+    if ((com_2 == -1) || (com_npc == -1))
+        LOG("ERROR: Cannot find NPC COM bone! Abort!");
+
     // Fill in transform
     LOG("Merging transforms! If programs stops here without any output, please try a few more times.");
     hkArray<hkQsTransform>& transforms = temp_anim->m_transforms;
@@ -142,18 +145,26 @@ void process(int argc, char* argv[])
     }
 
     // swap
+    hkQsTransform init_trans_vic, init_trans_att;
+    hkQsTransform init_trans_vic_com, init_trans_att_com;
     for (int frame = 0; frame < nframes; frame++)
     {
-        auto frame_begin = transforms.begin() + frame * ntracks;
-        std::swap(*(frame_begin + 1), *(frame_begin + 2));
-        std::swap(*(frame_begin + anim_v->m_numberOfTransformTracks + 2),
-                  *(frame_begin + anim_v->m_numberOfTransformTracks + 3));
+        auto  frame_begin   = transforms.begin() + frame * ntracks;
+        auto& vic_root      = *(frame_begin + 1);
+        auto& vic_root_bone = *(frame_begin + 2);
+        auto& vic_com       = *(frame_begin + com_2);
+        auto& att_root      = *(frame_begin + anim_v->m_numberOfTransformTracks + 2);
+        auto& att_root_bone = *(frame_begin + anim_v->m_numberOfTransformTracks + 3);
+        auto& att_com       = *(frame_begin + com_npc);
+
+        std::swap(vic_root, vic_root_bone);
+        std::swap(att_root, att_root_bone);
+
         // inverse rotation?
-        if ((com_2 != -1) && (com_npc != -1))
-            (frame_begin + 2)->m_rotation.setInverse((frame_begin + 1)->m_rotation);
-        (frame_begin + com_2)->m_rotation.setMul((frame_begin + 1)->m_rotation, (frame_begin + com_2)->m_rotation);
-        (frame_begin + anim_v->m_numberOfTransformTracks + 3)->m_rotation.setInverse((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation);
-        (frame_begin + com_npc)->m_rotation.setMul((frame_begin + anim_v->m_numberOfTransformTracks + 2)->m_rotation, (frame_begin + com_npc)->m_rotation);
+        vic_root_bone.m_rotation.setInverse(vic_root.m_rotation);
+        vic_com.m_rotation.setMul(vic_com.m_rotation, vic_root.m_rotation);
+        att_root_bone.m_rotation.setInverse(att_root.m_rotation);
+        att_com.m_rotation.setMul(att_com.m_rotation, att_root.m_rotation);
     }
 
     hkaSkeletonUtils::normalizeRotations(transforms.begin(), transforms.getSize());
@@ -164,6 +175,7 @@ void process(int argc, char* argv[])
     hkaSplineCompressedAnimation::AnimationCompressionParams aparams;
 
     tparams.m_rotationTolerance        = 0.0001f;
+    tparams.m_translationTolerance     = 0.0001f;
     tparams.m_rotationQuantizationType = hkaSplineCompressedAnimation::TrackCompressionParams::THREECOMP40;
     aparams.m_enableSampleSingleTracks = true;
 
