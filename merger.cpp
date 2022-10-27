@@ -89,7 +89,7 @@ void process(int argc, char* argv[])
         if (temp_str.find("NPC COM") != temp_str.npos)
             com_2 = idx;
     }
-    anno_tracks[anim_a->m_numberOfTransformTracks + 2].m_trackName = "NPC";
+    anno_tracks[anim_v->m_numberOfTransformTracks + 2].m_trackName = "NPC";
     for (auto i = 0; i < anim_a->m_numberOfTransformTracks; i++)
     {
         auto idx         = i + anim_v->m_numberOfTransformTracks + 3;
